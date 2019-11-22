@@ -1,5 +1,5 @@
-gym
-matplotlib
-numpy
-pillow
+atari-py
 opencv-python
+plotly
+torch
+tqdm
