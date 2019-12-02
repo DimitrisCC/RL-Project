@@ -82,7 +82,7 @@ class PrioritizedReplayMemory():
     # Adds state and action at time t, reward and terminal at time t + 1
     def append(self, state, action, reward, terminal):
         # Only store last frame and discretise to save memory
-        last_state = torch.tensor(state[-1])
+        last_state = state[-1]
         state = last_state.mul(255).to(dtype=torch.uint8, device=torch.device('cpu'))
         # Store new transition with maximum priority
         self.transitions.append(Transition(
@@ -122,10 +122,6 @@ class PrioritizedReplayMemory():
         # Retrieve all required transition data (from t - h to t + n)
         transition = self._get_transition(idx)
         # Create un-discretised state and nth next state
-        ##
-        for trans in transition[:self.history]:
-            print(trans.state.shape)
-        ##
         state = torch.stack([trans.state for trans in transition[:self.history]]).to(
             device=self.device).to(dtype=torch.float32).div_(255)
         next_state = torch.stack([trans.state for trans in transition[self.n:self.n + self.history]]).to(
@@ -190,7 +186,7 @@ class PrioritizedReplayMemory():
                 state_stack[t] = self.transitions.data[self.current_idx +
                                                        t - self.history + 1].state
                 prev_timestep -= 1
-        state = torch.stack(state_stack, 0).to(
-            dtype=torch.float32, device=self.device).div_(255)  # Agent will turn into batch
+        # Agent will turn into batch
+        state = torch.stack(state_stack, 0).to(dtype=torch.float32, device=self.device).div_(255)
         self.current_idx += 1
         return state

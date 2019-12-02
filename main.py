@@ -25,13 +25,13 @@ import wimblepong
 # Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps
 
 parser = argparse.ArgumentParser(description='Rainbow')
-parser.add_argument('--id', type=str, default='default',
+parser.add_argument('--id', type=str, default='Rainbow-1',
                     help='Experiment ID')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--disable-cuda', action='store_true',
                     help='Disable CUDA')
-parser.add_argument('--game', type=str, default='space_invaders',
-                    choices=atari_py.list_games(), help='ATARI game')
+parser.add_argument('--env', type=str, default="WimblepongVisualSimpleAI-v0",
+                    help='Choose Wimblepong environment')
 parser.add_argument('--T-max', type=int, default=int(50e6),
                     metavar='STEPS',
                     help='Number of training steps (4x number of frames)'
@@ -90,7 +90,7 @@ parser.add_argument('--adam-eps', type=float, default=1.5e-4,
                     metavar='ε', help='Adam epsilon')
 parser.add_argument('--batch-size', type=int, default=32,
                     metavar='SIZE', help='Batch size')
-parser.add_argument('--learn-start', type=int, default=int(20e1),
+parser.add_argument('--learn-start', type=int, default=int(20e3),
                     metavar='STEPS',
                     help='Number of steps before starting training')
 parser.add_argument('--evaluate', action='store_true',
@@ -204,16 +204,16 @@ while T < args.evaluation_size:
     if done:
         state, done = env.reset(), False
     ####
-    state = preprocess_frame(state, args.device)
+    state = preprocess_frame(frame=state, device=args.device)
     ####
     next_state, _, done, _ = env.step(np.random.randint(0, action_space))
-    val_mem.append(state, None, None, done)
+    val_mem.append(state.unsqueeze(0), None, None, done)
     state = next_state
     T += 1
 
 if args.evaluate:
     agent.eval()  # Set DQN (online network) to evaluation mode
-    avg_reward, avg_Q = test(env, args, 0, agent, val_mem, metrics, results_dir, evaluate=True)  # Test
+    avg_reward, avg_Q = test(args.env, args, 0, agent, val_mem, metrics, results_dir, evaluate=True)  # Test
     print('Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
 else:
   # Training loop
@@ -225,13 +225,13 @@ else:
 
         if T % args.replay_frequency == 0:
             agent.reset_noise()  # Draw a new set of noisy weights
-
+  
         # Choose an action greedily (with noisy weights)
         action = agent.get_action(state)
         next_state, reward, done, _ = env.step(action)  # Step
         if args.reward_clip > 0:
             reward = max(min(reward, args.reward_clip), -args.reward_clip)  # Clip rewards
-        mem.append(state, action, reward, done)  # Append transition to memory
+        mem.append(agent.last_stacked_obs, action, reward, done)  # Append transition to memory
 
         # Train and test
         if T >= args.learn_start:
@@ -244,7 +244,7 @@ else:
 
             if T % args.evaluation_interval == 0:
                 agent.eval()  # Set DQN (online network) to evaluation mode
-                avg_reward, avg_Q = test(args, T, agent, val_mem, metrics, results_dir)  # Test
+                avg_reward, avg_Q = test(args.env, args, T, agent, val_mem, metrics, results_dir)  # Test
                 log('T = ' + str(T) + ' / ' + str(args.T_max)
                     + ' | Avg. reward: ' + str(avg_reward)
                     + ' | Avg. Q: ' + str(avg_Q))

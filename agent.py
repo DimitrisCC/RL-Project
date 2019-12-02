@@ -26,6 +26,8 @@ class Agent():
         self.device = args.device
         self.window = args.history_length
         self.state_buffer = deque([], maxlen=self.window)
+        self.val_state_buffer = deque([], maxlen=self.window)
+        self.last_stacked_obs = None
 
         self.online_net = RainbowDQN(args, self.action_space).to(device=args.device)
         if args.model:  # Load pretrained model if provided
@@ -55,12 +57,17 @@ class Agent():
     def _reset_buffer(self):
         for _ in range(self.window):
             self.state_buffer.append(torch.zeros(50, 50, device=self.device))
+    
+    def reset_val_buffer(self):
+        for _ in range(self.window):
+            self.val_state_buffer.append(torch.zeros(50, 50, device=self.device))
 
     def get_name(self):
         return self.name
 
     def reset(self):
         self._reset_buffer()
+        self.reset_val_buffer()
 
     # TODO 
     def load_model(self):
@@ -80,21 +87,25 @@ class Agent():
         observation = preprocess_frame(observation, self.device)
         self.state_buffer.append(observation)
         observation = torch.stack(list(self.state_buffer), 0)
+        self.last_stacked_obs = observation
         with torch.no_grad():
             return (self.online_net(observation.unsqueeze(0)) * self.support).sum(2).argmax(1).item()
 
     # Acts with an ε-greedy policy (used for evaluation only)
     def act_e_greedy(self, observation, epsilon=0.001):  # High ε can reduce evaluation scores drastically
-        observation = preprocess_frame(observation, self.device)
-        self.state_buffer.append(observation)
-        observation = torch.stack(list(self.state_buffer), 0)
-        return np.random.randint(0, self.action_space) if np.random.random() < epsilon else self.get_action(observation)
+        if np.random.random() < epsilon:
+            return np.random.randint(0, self.action_space)
+        else:
+            observation = preprocess_frame(observation, self.device)
+            self.val_state_buffer.append(observation)
+            observation = torch.stack(list(self.val_state_buffer), 0)
+            with torch.no_grad():
+                return (self.online_net(observation.unsqueeze(0)) * self.support).sum(2).argmax(1).item()
 
     def train_step(self, mem):
         # Sample transitions
         idxs, states, actions, returns, next_states, nonterminals, weights = mem.sample(self.batch_size)
-        print(states.shape)
-        exit()
+ 
         # Calculate current state probabilities (online network noise already sampled)
         log_ps = self.online_net(states, log=True)  # Log probabilities log p(s_t, ·; θonline)
         log_ps_a = log_ps[range(self.batch_size), actions]  # log p(s_t, a_t; θonline)
@@ -140,7 +151,6 @@ class Agent():
 
     # Evaluates Q-value based on single state (no batch)
     def evaluate_q(self, state):
-        state = preprocess_frame(state)
         with torch.no_grad():
             return (self.online_net(state.unsqueeze(0)) * self.support).sum(2).max(1)[0].item()
 

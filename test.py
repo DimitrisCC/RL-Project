@@ -5,24 +5,22 @@ import plotly
 from plotly.graph_objs import Scatter
 from plotly.graph_objs.scatter import Line
 import torch
-
-from env import Env
+import gym
 
 
 # Test DQN
-def test(env, args, T, agent, val_mem, metrics, results_dir, evaluate=False):
-    env = env.copy()
-    env.reset()
+def test(env_name, args, T, agent, val_mem, metrics, results_dir, evaluate=False):
+    env = gym.make(env_name)
+    agent.reset_val_buffer()
     metrics['steps'].append(T)
-    T_rewards, T_Qs = [], []
+    T_rewards, T_Qs, T_winrate = [], [], []
 
     # Test performance over several episodes
     done = True
     for _ in range(args.evaluation_episodes):
         while True:
             if done:
-                state, reward_sum, done, _ = env.reset(), 0, False
-
+                state, reward_sum, done = env.reset(), 0, False
             action = agent.act_e_greedy(state)  # Choose an action ε-greedily
             state, reward, done, info = env.step(action)  # Step
             reward_sum += reward
@@ -51,8 +49,7 @@ def test(env, args, T, agent, val_mem, metrics, results_dir, evaluate=False):
         torch.save(metrics, os.path.join(results_dir, 'metrics.pth'))
 
         # Plot
-        _plot_line(metrics['steps'], metrics['rewards'],
-                   'Reward', path=results_dir)
+        _plot_line(metrics['steps'], metrics['rewards'], 'Reward', path=results_dir)
         _plot_line(metrics['steps'], metrics['Qs'], 'Q', path=results_dir)
 
     # Return average reward and Q-value
