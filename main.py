@@ -9,7 +9,6 @@ import os
 import pickle
 import gym
 
-import atari_py
 import numpy as np
 import torch
 from tqdm import trange
