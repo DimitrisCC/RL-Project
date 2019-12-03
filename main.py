@@ -219,7 +219,7 @@ if args.evaluate:
 else:
   # Training loop
     agent.train()
-    T, done = 0, True
+    T, done, prev_last_touch = 0, True, 0
     for T in trange(1, args.T_max + 1, total=args.T_max):
         if done:
             state, done = env.reset(), False
@@ -230,7 +230,9 @@ else:
         # Choose an action greedily (with noisy weights)
         action = agent.get_action(state)
         next_state, reward, done, _ = env.step(action)  # Step
-        reward += args.hit_reward
+        if env.ball.last_touch == 1 and prev_last_touch != 1:
+            reward += args.hit_reward
+        prev_last_touch = env.ball.last_touch
         if args.reward_clip > 0:
             reward = max(min(reward, args.reward_clip), -args.reward_clip)  # Clip rewards
         mem.append(agent.last_stacked_obs, action, reward, done)  # Append transition to memory
