@@ -1,6 +1,6 @@
 import wimblepong
 import gym
-from wimblepong.simple_ai import SimpleAi
+from simple_ai import SimpleAi
 
 
 class PongTestbench(object):
