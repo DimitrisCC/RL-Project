@@ -24,7 +24,7 @@ import wimblepong
 # Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps
 
 parser = argparse.ArgumentParser(description='Rainbow')
-parser.add_argument('--id', type=str, default='Rainbow-1',
+parser.add_argument('--id', type=str, default='Rainbow-2',
                     help='Experiment ID')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--disable-cuda', action='store_true',
@@ -101,9 +101,9 @@ parser.add_argument('--evaluation-episodes', type=int, default=10,
                     metavar='N',
                     help='Number of evaluation episodes to average over'
                     )
-
-# TODO: Note that DeepMind's evaluation method is running the latest agent for 500K frames ever every 1M steps
-
+parser.add_argument('--hit-reward', type=float, default=0.25,
+                    help='+reward if you hit the ball'
+                    )
 parser.add_argument('--evaluation-size', type=int, default=500,
                     metavar='N',
                     help='Number of transitions to use for validating Q'
@@ -115,7 +115,7 @@ parser.add_argument('--enable-cudnn', action='store_true',
 parser.add_argument('--checkpoint-interval', default=10000,
                     help='How often to checkpoint the model, defaults to 0 (never checkpoint)'
                     )
-parser.add_argument('--memory', help='Path to save/load the memory from'
+parser.add_argument('--memory', default='results/Rainbow-2/memory', help='Path to save/load the memory from'
                     )
 parser.add_argument('--disable-bzip-memory', action='store_true',
                     help='Don\'t zip the memory file. Not recommended (zipping is a bit slower and much, much smaller)'
@@ -171,6 +171,8 @@ def save_memory(memory, memory_path, disable_bzip):
         with bz2.open(memory_path, 'wb') as zipped_pickle_file:
             pickle.dump(memory, zipped_pickle_file)
 
+args.reward_clip = args.V_max * 5*args.hit_reward
+args.V_max += 5*args.hit_reward
 
 # Environment
 env = gym.make("WimblepongVisualSimpleAI-v0")
@@ -217,7 +219,7 @@ if args.evaluate:
 else:
   # Training loop
     agent.train()
-    T, done = 0, True
+    T, done, prev_last_touch = 0, True, 0
     for T in trange(1, args.T_max + 1, total=args.T_max):
         if done:
             state, done = env.reset(), False
@@ -228,6 +230,9 @@ else:
         # Choose an action greedily (with noisy weights)
         action = agent.get_action(state)
         next_state, reward, done, _ = env.step(action)  # Step
+        if env.ball.last_touch == 1 and prev_last_touch != 1:
+            reward += args.hit_reward
+        prev_last_touch = env.ball.last_touch
         if args.reward_clip > 0:
             reward = max(min(reward, args.reward_clip), -args.reward_clip)  # Clip rewards
         mem.append(agent.last_stacked_obs, action, reward, done)  # Append transition to memory
