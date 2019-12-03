@@ -24,7 +24,7 @@ import wimblepong
 # Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps
 
 parser = argparse.ArgumentParser(description='Rainbow')
-parser.add_argument('--id', type=str, default='Rainbow-2',
+parser.add_argument('--id', type=str, default='Rainbow-3',
                     help='Experiment ID')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--disable-cuda', action='store_true',
@@ -101,8 +101,11 @@ parser.add_argument('--evaluation-episodes', type=int, default=10,
                     metavar='N',
                     help='Number of evaluation episodes to average over'
                     )
-parser.add_argument('--hit-reward', type=float, default=0.25,
+parser.add_argument('--hit-reward', type=float, default=0,
                     help='+reward if you hit the ball'
+                    )
+parser.add_argument('--crop-opponent', action='store_true',
+                    help='True if you want the opponent paddle pixels to be black'
                     )
 parser.add_argument('--evaluation-size', type=int, default=500,
                     metavar='N',
@@ -115,7 +118,7 @@ parser.add_argument('--enable-cudnn', action='store_true',
 parser.add_argument('--checkpoint-interval', default=10000,
                     help='How often to checkpoint the model, defaults to 0 (never checkpoint)'
                     )
-parser.add_argument('--memory', default='results/Rainbow-2/memory', help='Path to save/load the memory from'
+parser.add_argument('--memory', default='results/Rainbow-3/memory', help='Path to save/load the memory from'
                     )
 parser.add_argument('--disable-bzip-memory', action='store_true',
                     help='Don\'t zip the memory file. Not recommended (zipping is a bit slower and much, much smaller)'
@@ -171,7 +174,7 @@ def save_memory(memory, memory_path, disable_bzip):
         with bz2.open(memory_path, 'wb') as zipped_pickle_file:
             pickle.dump(memory, zipped_pickle_file)
 
-args.reward_clip = args.V_max * 5*args.hit_reward
+args.reward_clip = args.V_max + 5*args.hit_reward
 args.V_max += 5*args.hit_reward
 
 # Environment
@@ -205,7 +208,7 @@ while T < args.evaluation_size:
     if done:
         state, done = env.reset(), False
     ####
-    state = preprocess_frame(frame=state, device=args.device)
+    state = preprocess_frame(frame=state, device=args.device, crop_opponent=args.crop_opponent)
     ####
     next_state, _, done, _ = env.step(np.random.randint(0, action_space))
     val_mem.append(state.unsqueeze(0), None, None, done)
@@ -222,7 +225,7 @@ else:
     T, done, prev_last_touch = 0, True, 0
     for T in trange(1, args.T_max + 1, total=args.T_max):
         if done:
-            state, done = env.reset(), False
+            state, done, prev_last_touch = env.reset(), False, 0
 
         if T % args.replay_frequency == 0:
             agent.reset_noise()  # Draw a new set of noisy weights
