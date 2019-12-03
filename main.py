@@ -89,7 +89,7 @@ parser.add_argument('--adam-eps', type=float, default=1.5e-4,
                     metavar='ε', help='Adam epsilon')
 parser.add_argument('--batch-size', type=int, default=32,
                     metavar='SIZE', help='Batch size')
-parser.add_argument('--learn-start', type=int, default=int(20e1),
+parser.add_argument('--learn-start', type=int, default=int(20e3),
                     metavar='STEPS',
                     help='Number of steps before starting training')
 parser.add_argument('--evaluate', action='store_true',
