@@ -112,7 +112,7 @@ parser.add_argument('--render', action='store_true',
                     help='Display screen (testing only)')
 parser.add_argument('--enable-cudnn', action='store_true',
                     help='Enable cuDNN (faster but nondeterministic)')
-parser.add_argument('--checkpoint-interval', default=100,
+parser.add_argument('--checkpoint-interval', default=10000,
                     help='How often to checkpoint the model, defaults to 0 (never checkpoint)'
                     )
 parser.add_argument('--memory', help='Path to save/load the memory from'
