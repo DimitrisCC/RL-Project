@@ -24,7 +24,7 @@ import wimblepong
 # Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps
 
 parser = argparse.ArgumentParser(description='Rainbow')
-parser.add_argument('--id', type=str, default='Rainbow-2',
+parser.add_argument('--id', type=str, default='Rainbow-3',
                     help='Experiment ID')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--disable-cuda', action='store_true',
@@ -118,7 +118,7 @@ parser.add_argument('--enable-cudnn', action='store_true',
 parser.add_argument('--checkpoint-interval', default=10000,
                     help='How often to checkpoint the model, defaults to 0 (never checkpoint)'
                     )
-parser.add_argument('--memory', default='results/Rainbow-2/memory', help='Path to save/load the memory from'
+parser.add_argument('--memory', default='results/Rainbow-3/memory', help='Path to save/load the memory from'
                     )
 parser.add_argument('--disable-bzip-memory', action='store_true',
                     help='Don\'t zip the memory file. Not recommended (zipping is a bit slower and much, much smaller)'
