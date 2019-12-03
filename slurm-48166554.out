@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "main.py", line 14, in <module>
+    from tqdm import trange
+ModuleNotFoundError: No module named 'tqdm'
+srun: error: gpu1: task 0: Exited with exit code 1
+srun: Terminating job step 48166554.0
