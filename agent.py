@@ -25,6 +25,7 @@ class Agent():
         self.discount = args.discount
         self.device = args.device
         self.window = args.history_length
+        self.crop_opponent = args.crop_opponent
         self.state_buffer = deque([], maxlen=self.window)
         self.val_state_buffer = deque([], maxlen=self.window)
         self.last_stacked_obs = None
@@ -84,7 +85,7 @@ class Agent():
 
     # Acts based on single state (no batch)
     def get_action(self, observation):
-        observation = preprocess_frame(observation, self.device)
+        observation = preprocess_frame(observation, self.device, self.crop_opponent)
         self.state_buffer.append(observation)
         observation = torch.stack(list(self.state_buffer), 0)
         self.last_stacked_obs = observation
@@ -96,7 +97,7 @@ class Agent():
         if np.random.random() < epsilon:
             return np.random.randint(0, self.action_space)
         else:
-            observation = preprocess_frame(observation, self.device)
+            observation = preprocess_frame(observation, self.device, self.crop_opponent)
             self.val_state_buffer.append(observation)
             observation = torch.stack(list(self.val_state_buffer), 0)
             with torch.no_grad():

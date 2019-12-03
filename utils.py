@@ -1,7 +1,10 @@
 import cv2
 import torch
 
-def preprocess_frame(frame, device):
+def preprocess_frame(frame, device, crop_opponent=True):
+    if crop_opponent:
+        # crop out the right hand side (opponent)
+        frame = frame[:, 12:]
     # make it gray
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     # 25% downsampling

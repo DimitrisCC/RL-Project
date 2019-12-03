@@ -208,7 +208,7 @@ while T < args.evaluation_size:
     if done:
         state, done = env.reset(), False
     ####
-    state = preprocess_frame(frame=state, device=args.device)
+    state = preprocess_frame(frame=state, device=args.device, crop_opponent=args.crop_opponent)
     ####
     next_state, _, done, _ = env.step(np.random.randint(0, action_space))
     val_mem.append(state.unsqueeze(0), None, None, done)
