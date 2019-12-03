@@ -89,7 +89,7 @@ parser.add_argument('--adam-eps', type=float, default=1.5e-4,
                     metavar='ε', help='Adam epsilon')
 parser.add_argument('--batch-size', type=int, default=32,
                     metavar='SIZE', help='Batch size')
-parser.add_argument('--learn-start', type=int, default=int(20e3),
+parser.add_argument('--learn-start', type=int, default=int(20e1),
                     metavar='STEPS',
                     help='Number of steps before starting training')
 parser.add_argument('--evaluate', action='store_true',
@@ -101,8 +101,11 @@ parser.add_argument('--evaluation-episodes', type=int, default=10,
                     metavar='N',
                     help='Number of evaluation episodes to average over'
                     )
-parser.add_argument('--hit-reward', type=float, default=0.25,
+parser.add_argument('--hit-reward', type=float, default=0,
                     help='+reward if you hit the ball'
+                    )
+parser.add_argument('--crop-opponent', action='store_true',
+                    help='True if you want the opponent paddle pixels to be black'
                     )
 parser.add_argument('--evaluation-size', type=int, default=500,
                     metavar='N',
@@ -171,7 +174,7 @@ def save_memory(memory, memory_path, disable_bzip):
         with bz2.open(memory_path, 'wb') as zipped_pickle_file:
             pickle.dump(memory, zipped_pickle_file)
 
-args.reward_clip = args.V_max * 5*args.hit_reward
+args.reward_clip = args.V_max + 5*args.hit_reward
 args.V_max += 5*args.hit_reward
 
 # Environment
@@ -222,7 +225,7 @@ else:
     T, done, prev_last_touch = 0, True, 0
     for T in trange(1, args.T_max + 1, total=args.T_max):
         if done:
-            state, done = env.reset(), False
+            state, done, prev_last_touch = env.reset(), False, 0
 
         if T % args.replay_frequency == 0:
             agent.reset_noise()  # Draw a new set of noisy weights
