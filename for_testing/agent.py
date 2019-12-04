@@ -20,12 +20,14 @@ class Agent():
             self.Vmin=-10
             self.Vmax=10
             self.crop_opponent=False
+            self.window=4
             if torch.cuda.is_available():
                 self.device = torch.device('cuda')
             else:
                 self.device = torch.device('cpu')
             self.support = torch.linspace(self.Vmin, self.Vmax, self.atoms).to(device=self.device)
-            self.state_buffer = deque([], maxlen=512)
+            self.state_buffer = deque([], maxlen=self.window)
+            self.val_state_buffer = deque([], maxlen=self.window)
             self.online_net = RainbowDQN().to(device=self.device)
             self.last_stacked_obs = None
             self.online_net.eval()
@@ -96,8 +98,8 @@ class Agent():
         # else:  # Raise error if incorrect model path provided
         #     raise FileNotFoundError(args.model)
         
-        if os.path.isfile('/m/triton/scratch/elec/puhe/p/jaina5/RL/project/RL-Project/results/Rainbow-2/checkpoint.pth'):
-            state_dict = torch.load('/m/triton/scratch/elec/puhe/p/jaina5/RL/project/RL-Project/results/Rainbow-2/checkpoint.pth', map_location='cpu')  # Always load tensors onto CPU by default, will shift to GPU if necessary
+        if os.path.isfile('/u/11/jaina5/unix/RL-Project/results/Rainbow-1/checkpoint.pth'):
+            state_dict = torch.load('/u/11/jaina5/unix/RL-Project/results/Rainbow-1/checkpoint.pth', map_location='cpu')  # Always load tensors onto CPU by default, will shift to GPU if necessary
             self.online_net.load_state_dict(state_dict)
             print("Loading pretrained model: ")
         else:  # Raise error if incorrect model path provided
