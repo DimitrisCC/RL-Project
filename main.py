@@ -14,14 +14,11 @@ import torch
 from tqdm import trange
 
 from agent import Agent
-from env import Env
 from memory import PrioritizedReplayMemory
 from utils import preprocess_frame
 from test import test
 
 import wimblepong
-
-# Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps
 
 parser = argparse.ArgumentParser(description='Rainbow')
 parser.add_argument('--id', type=str, default='Rainbow-2',
@@ -33,18 +30,10 @@ parser.add_argument('--env', type=str, default="WimblepongVisualSimpleAI-v0",
                     help='Choose Wimblepong environment')
 parser.add_argument('--T-max', type=int, default=int(50e6),
                     metavar='STEPS',
-                    help='Number of training steps (4x number of frames)'
-                    )
-parser.add_argument('--max-episode-length', type=int,
-                    default=int(108e3), metavar='LENGTH',
-                    help='Max episode length in game frames (0 to disable)'
+                    help='Number of training steps'
                     )
 parser.add_argument('--history-length', type=int, default=4,
                     metavar='T', help='Number of consecutive states processed')
-parser.add_argument('--architecture', type=str, default='data-efficient',
-    				choices=['canonical', 'data-efficient'], metavar='ARCH',
-    				help='Network architecture',
-					)
 parser.add_argument('--hidden-size', type=int, default=512,
                     metavar='SIZE', help='Network hidden size')
 parser.add_argument('--noisy-std', type=float, default=0.1, metavar='σ',
@@ -178,7 +167,7 @@ args.reward_clip = args.V_max + 5*args.hit_reward
 args.V_max += 5*args.hit_reward
 
 # Environment
-env = gym.make("WimblepongVisualSimpleAI-v0")
+env = gym.make(args.env)
 action_space = env.action_space.n
 
 # Agent
@@ -207,9 +196,7 @@ T, done = 0, True
 while T < args.evaluation_size:
     if done:
         state, done = env.reset(), False
-    ####
     state = preprocess_frame(frame=state, device=args.device, crop_opponent=args.crop_opponent)
-    ####
     next_state, _, done, _ = env.step(np.random.randint(0, action_space))
     val_mem.append(state.unsqueeze(0), None, None, done)
     state = next_state
@@ -217,8 +204,8 @@ while T < args.evaluation_size:
 
 if args.evaluate:
     agent.eval()  # Set DQN (online network) to evaluation mode
-    avg_reward, avg_Q = test(args.env, args, 0, agent, val_mem, metrics, results_dir, evaluate=True)  # Test
-    print('Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
+    avg_reward, avg_Q, winrate = test(args.env, args, 0, agent, val_mem, metrics, results_dir, evaluate=True)  # Test
+    print('Winrate: ' + str(winrate) + ' | Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
 else:
   # Training loop
     agent.train()

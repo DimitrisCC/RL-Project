@@ -6,7 +6,7 @@ from matplotlib import font_manager
 import importlib
 
 parser = argparse.ArgumentParser()
-parser.add_argument("dir1", type=str,default='/u/11/jaina5/unix/RL-Project/results/Rainbow-1/',nargs="?", help="Directory to agent 1 to be tested.")
+parser.add_argument("dir1", type=str, default='', nargs="?", help="Directory to agent 1 to be tested.")
 parser.add_argument("dir2", type=str, default='/m/triton/scratch/elec/puhe/p/jaina5/RL/project/RL-Project/for_testing/test_agents/KarpathyNotTrained/', nargs="?",
                     help="Directory to agent 2 to be tested. If empty, SimpleAI is used instead.")
 parser.add_argument("--render", "-r", action="store_true", help="Render the competition.")
@@ -17,7 +17,6 @@ args = parser.parse_args()
 sys.path.insert(0, args.dir1)
 import agent
 orig_wd = os.getcwd()
-print(args.dir1)
 os.chdir(args.dir1)
 agent1 = agent.Agent()
 agent1.load_model()

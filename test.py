@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import division
 import os
 import plotly
@@ -17,6 +16,7 @@ def test(env_name, args, T, agent, val_mem, metrics, results_dir, evaluate=False
 
     # Test performance over several episodes
     done = True
+    wins = 0
     for _ in range(args.evaluation_episodes):
         while True:
             if done:
@@ -26,9 +26,10 @@ def test(env_name, args, T, agent, val_mem, metrics, results_dir, evaluate=False
             reward_sum += reward
             if args.render:
                 env.render()
-
             if done:
                 T_rewards.append(reward_sum)
+                if reward > 9:
+                    wins += 1
                 break
     env.close()
 
@@ -37,6 +38,7 @@ def test(env_name, args, T, agent, val_mem, metrics, results_dir, evaluate=False
         T_Qs.append(agent.evaluate_q(state))
 
     avg_reward, avg_Q = sum(T_rewards) / len(T_rewards), sum(T_Qs) / len(T_Qs)
+    winrate = wins / args.evaluation_episodes
     if not evaluate:
         # Save model parameters if improved
         if avg_reward >= metrics['best_avg_reward']:
@@ -53,7 +55,7 @@ def test(env_name, args, T, agent, val_mem, metrics, results_dir, evaluate=False
         _plot_line(metrics['steps'], metrics['Qs'], 'Q', path=results_dir)
 
     # Return average reward and Q-value
-    return avg_reward, avg_Q
+    return avg_reward, avg_Q, winrate
 
 
 # Plots min, max and mean + standard deviation bars of a population over time
