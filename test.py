@@ -39,7 +39,7 @@ def test(env_name, args, T, agent, val_mem, metrics, results_dir, evaluate=False
     avg_reward, avg_Q = sum(T_rewards) / len(T_rewards), sum(T_Qs) / len(T_Qs)
     if not evaluate:
         # Save model parameters if improved
-        if avg_reward > metrics['best_avg_reward']:
+        if avg_reward >= metrics['best_avg_reward']:
             metrics['best_avg_reward'] = avg_reward
             agent.save(results_dir)
 

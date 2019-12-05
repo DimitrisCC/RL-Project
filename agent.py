@@ -103,14 +103,7 @@ class Agent():
             with torch.no_grad():
                 return (self.online_net(observation.unsqueeze(0)) * self.support).sum(2).argmax(1).item()
 
-    def train_step(self, mem):
-        # Sample transitions
-        idxs, states, actions, returns, next_states, nonterminals, weights = mem.sample(self.batch_size)
- 
-        # Calculate current state probabilities (online network noise already sampled)
-        log_ps = self.online_net(states, log=True)  # Log probabilities log p(s_t, ·; θonline)
-        log_ps_a = log_ps[range(self.batch_size), actions]  # log p(s_t, a_t; θonline)
-
+    def projection(self, states, actions, returns, next_states, nonterminals):
         with torch.no_grad():
             # Calculate nth next state probabilities
             pns = self.online_net(next_states)  # Probabilities p(s_t+n, ·; θonline)
@@ -135,6 +128,16 @@ class Agent():
             offset = torch.linspace(0, ((self.batch_size - 1) * self.atoms), self.batch_size).unsqueeze(1).expand(self.batch_size, self.atoms).to(actions)
             m.view(-1).index_add_(0, (l + offset).view(-1), (pns_a * (u.float() - b)).view(-1))  # m_l = m_l + p(s_t+n, a*)(u - b)
             m.view(-1).index_add_(0, (u + offset).view(-1), (pns_a * (b - l.float())).view(-1))  # m_u = m_u + p(s_t+n, a*)(b - l)
+
+    def train_step(self, mem):
+        # Sample transitions
+        idxs, states, actions, returns, next_states, nonterminals, weights = mem.sample(self.batch_size)
+ 
+        # Calculate current state probabilities (online network noise already sampled)
+        log_ps = self.online_net(states, log=True)  # Log probabilities log p(s_t, ·; θonline)
+        log_ps_a = log_ps[range(self.batch_size), actions]  # log p(s_t, a_t; θonline)
+
+        m = self.projection(states, actions, returns, next_states, nonterminals)
 
         loss = -torch.sum(m * log_ps_a, 1)  # Cross-entropy loss (minimises DKL(m||p(s_t, a_t)))
         self.online_net.zero_grad()
