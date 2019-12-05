@@ -98,8 +98,8 @@ class Agent():
         # else:  # Raise error if incorrect model path provided
         #     raise FileNotFoundError(args.model)
         
-        if os.path.isfile('/u/11/jaina5/unix/RL-Project/results/Rainbow-1/checkpoint.pth'):
-            state_dict = torch.load('/u/11/jaina5/unix/RL-Project/results/Rainbow-1/checkpoint.pth', map_location='cpu')  # Always load tensors onto CPU by default, will shift to GPU if necessary
+        if os.path.isfile('checkpoint.pth'):
+            state_dict = torch.load('checkpoint.pth', map_location='cpu')  # Always load tensors onto CPU by default, will shift to GPU if necessary
             self.online_net.load_state_dict(state_dict)
             print("Loading pretrained model: ")
         else:  # Raise error if incorrect model path provided
