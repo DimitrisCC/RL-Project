@@ -31,7 +31,8 @@ class Agent():
         self.online_net.eval()
         # no need for optimizer and target network
         self.target_net = RainbowDQN().to(device=self.device)
-        self.optimiser = optim.Adam(self.online_net.parameters(), lr=0.0000625, eps=1.5e-4)
+        self.optimiser = optim.Adam(
+            self.online_net.parameters(), lr=0.0000625, eps=1.5e-4)
         self.reset()
 
     def _reset_buffer(self):
@@ -66,7 +67,8 @@ class Agent():
 
     # Acts based on single state (no batch)
     def get_action(self, observation):
-        observation = preprocess_frame(observation, self.device, self.crop_opponent)
+        observation = preprocess_frame(
+            observation, self.device, self.crop_opponent)
         self.state_buffer.append(observation)
         observation = torch.stack(list(self.state_buffer), 0)
         self.last_stacked_obs = observation
@@ -85,17 +87,7 @@ class Agent():
             with torch.no_grad():
                 return (self.online_net(observation.unsqueeze(0)) * self.support).sum(2).argmax(1).item()
 
-    def train_step(self, mem):
-        # Sample transitions
-        idxs, states, actions, returns, next_states, nonterminals, weights = mem.sample(
-            self.batch_size)
-
-        # Calculate current state probabilities (online network noise already sampled)
-        # Log probabilities log p(s_t, ·; θonline)
-        log_ps = self.online_net(states, log=True)
-        # log p(s_t, a_t; θonline)
-        log_ps_a = log_ps[range(self.batch_size), actions]
-
+    def projection(self, states, actions, returns, next_states, nonterminals):
         with torch.no_grad():
             # Calculate nth next state probabilities
             # Probabilities p(s_t+n, ·; θonline)
@@ -112,7 +104,8 @@ class Agent():
 
             # Compute Tz (Bellman operator T applied to z)
             # Tz = R^n + (γ^n)z (accounting for terminal states)
-            Tz = returns.unsqueeze(1) + nonterminals * (self.discount ** self.n) * self.support.unsqueeze(0)
+            Tz = returns.unsqueeze(
+                1) + nonterminals * (self.discount ** self.n) * self.support.unsqueeze(0)
             # Clamp between supported values
             Tz = Tz.clamp(min=self.Vmin, max=self.Vmax)
             # Compute L2 projection of Tz onto fixed support z
@@ -130,6 +123,21 @@ class Agent():
                                                              (u.float() - b)).view(-1))  # m_l = m_l + p(s_t+n, a*)(u - b)
             m.view(-1).index_add_(0, (u + offset).view(-1), (pns_a *
                                                              (b - l.float())).view(-1))  # m_u = m_u + p(s_t+n, a*)(b - l)
+        return m
+
+    def train_step(self, mem):
+        # Sample transitions
+        idxs, states, actions, returns, next_states, nonterminals, weights = mem.sample(
+            self.batch_size)
+
+        # Calculate current state probabilities (online network noise already sampled)
+        # Log probabilities log p(s_t, ·; θonline)
+        log_ps = self.online_net(states, log=True)
+        # log p(s_t, a_t; θonline)
+        log_ps_a = log_ps[range(self.batch_size), actions]
+
+        m = self.projection(states, actions, returns,
+                            next_states, nonterminals)
 
         # Cross-entropy loss (minimises DKL(m||p(s_t, a_t)))
         loss = -torch.sum(m * log_ps_a, 1)

@@ -21,7 +21,7 @@ from test import test
 import wimblepong
 
 parser = argparse.ArgumentParser(description='Rainbow')
-parser.add_argument('--id', type=str, default='Rainbow-2',
+parser.add_argument('--id', type=str, default='Rainbow-5',
                     help='Experiment ID')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--disable-cuda', action='store_true',
@@ -107,7 +107,7 @@ parser.add_argument('--enable-cudnn', action='store_true',
 parser.add_argument('--checkpoint-interval', default=10000,
                     help='How often to checkpoint the model, defaults to 0 (never checkpoint)'
                     )
-parser.add_argument('--memory', default='results/Rainbow-2/memory', help='Path to save/load the memory from'
+parser.add_argument('--memory', default='results/Rainbow-5/memory', help='Path to save/load the memory from'
                     )
 parser.add_argument('--disable-bzip-memory', action='store_true',
                     help='Don\'t zip the memory file. Not recommended (zipping is a bit slower and much, much smaller)'
@@ -139,10 +139,8 @@ else:
     args.device = torch.device('cpu')
 
 
-# Simple ISO 8601 timestamped logger
-
 def log(s):
-    print('[' + str(datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
+    print('[' + str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
           + '] ' + s)
 
 
@@ -177,8 +175,7 @@ agent = Agent(args, env)
 
 if args.model is not None and not args.evaluate:
     if not args.memory:
-        raise ValueError('Cannot resume training without memory save path. Aborting...'
-                         )
+        raise ValueError('Cannot resume training without memory save path. Aborting...')
     elif not os.path.exists(args.memory):
         raise ValueError(
             'Could not find memory file at {path}. Aborting...'.format(path=args.memory))
@@ -238,8 +235,9 @@ else:
 
             if T % args.evaluation_interval == 0:
                 agent.eval()  # Set DQN (online network) to evaluation mode
-                avg_reward, avg_Q = test(args.env, args, T, agent, val_mem, metrics, results_dir)  # Test
+                avg_reward, avg_Q, winrate = test(args.env, args, T, agent, val_mem, metrics, results_dir)  # Test
                 log('T = ' + str(T) + ' / ' + str(args.T_max)
+                    + ' | Winrate: ' + str(winrate)
                     + ' | Avg. reward: ' + str(avg_reward)
                     + ' | Avg. Q: ' + str(avg_Q))
                 agent.train()  # Set DQN (online network) back to training mode
