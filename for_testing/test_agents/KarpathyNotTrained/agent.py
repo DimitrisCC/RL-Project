@@ -3,14 +3,15 @@ import pickle
 
 
 def sigmoid(x):
-    return 1.0 / (1.0 + np.exp(-x))  # sigmoid "squashing" function to interval [0,1]
+    # sigmoid "squashing" function to interval [0,1]
+    return 1.0 / (1.0 + np.exp(-x))
 
 
 def prepro(I):
     """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
-    I = I[::2,::2,0] # downsample by factor of 2
-    I[I == 43] = 0 # erase background (background type 1)
-    I[I != 0] = 1 # everything else (paddles, ball) just set to 1
+    I = I[::2, ::2, 0]  # downsample by factor of 2
+    I[I == 43] = 0  # erase background (background type 1)
+    I[I != 0] = 1  # everything else (paddles, ball) just set to 1
     return I.astype(np.float).ravel()
 
 
@@ -46,7 +47,8 @@ class Agent(object):
     def get_action(self, observation):
         # preprocess the observation, set input to network to be difference image
         cur_x = prepro(observation)
-        x = cur_x - self.prev_x if self.prev_x is not None else np.zeros(self.D)
+        x = cur_x - \
+            self.prev_x if self.prev_x is not None else np.zeros(self.D)
         self.prev_x = cur_x
 
         # forward the policy network and sample an action from the returned probability
@@ -57,4 +59,3 @@ class Agent(object):
     def reset(self):
         # Reset previous observation
         self.prev_x = None
-
