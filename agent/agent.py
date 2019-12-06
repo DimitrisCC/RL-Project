@@ -32,6 +32,7 @@ class Agent():
         # no need for optimizer and target network
         self.target_net = RainbowDQN().to(device=self.device)
         self.optimiser = optim.Adam(self.online_net.parameters(), lr=0.0000625, eps=1.5e-4)
+        self.reset()
 
     def _reset_buffer(self):
         for _ in range(self.window):
@@ -54,6 +55,7 @@ class Agent():
             # Always load tensors onto CPU by default, will shift to GPU if necessary
             state_dict = torch.load('model.pth', map_location='cpu')
             self.online_net.load_state_dict(state_dict)
+            self.online_net.to(self.device)
             print("Loading pretrained model: ")
         else:  # Raise error if incorrect model path provided
             raise FileNotFoundError("Not found")
@@ -64,8 +66,7 @@ class Agent():
 
     # Acts based on single state (no batch)
     def get_action(self, observation):
-        observation = preprocess_frame(
-            observation, self.device, self.crop_opponent)
+        observation = preprocess_frame(observation, self.device, self.crop_opponent)
         self.state_buffer.append(observation)
         observation = torch.stack(list(self.state_buffer), 0)
         self.last_stacked_obs = observation

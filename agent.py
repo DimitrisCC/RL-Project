@@ -35,6 +35,7 @@ class Agent():
             if os.path.isfile(args.model):
                 # Always load tensors onto CPU by default, will shift to GPU if necessary
                 state_dict = torch.load(args.model, map_location='cpu')
+                self.online_net.to(self.device)
                 self.online_net.load_state_dict(state_dict)
                 print("Loading pretrained model: " + args.model)
             else:  # Raise error if incorrect model path provided
@@ -72,6 +73,7 @@ class Agent():
         if os.path.isfile(args.model):
             state_dict = torch.load(args.model, map_location='cpu')  # Always load tensors onto CPU by default, will shift to GPU if necessary
             self.online_net.load_state_dict(state_dict)
+            self.online_net.to(self.device)
             print("Loading pretrained model: " + args.model)
         else:  # Raise error if incorrect model path provided
             raise FileNotFoundError(args.model)

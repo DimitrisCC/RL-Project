@@ -6,7 +6,7 @@ from models import PolicyConv
 
 class Agent(object):
     def __init__(self):
-        self.train_device = "cuda"
+        self.train_device = "cuda" if torch.cuda.is_available() else "cpu"
         self.policy = PolicyConv(3, 128).to(self.train_device)
         self.prev_obs = None
         self.policy.eval()
@@ -27,8 +27,9 @@ class Agent(object):
         return "Some other agent"
 
     def load_model(self):
-        weights = torch.load("model.mdl")
+        weights = torch.load("model.mdl", map_location=torch.device('cpu'))
         self.policy.load_state_dict(weights, strict=False)
+        self.policy.to(self.train_device)
 
     def preprocess(self, observation):
         observation = observation[::2, ::2].mean(axis=-1)
