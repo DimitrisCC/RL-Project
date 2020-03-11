@@ -56,3 +56,5 @@ on the scoreboard
 The SimpleAI agent is an agent that uses the absolute ball and player positions to
 follow the ball and reflect it in random directions.
 
+
+The implementation follows Kaixhin's.
